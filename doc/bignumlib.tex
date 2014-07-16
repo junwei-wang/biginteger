@@ -1,0 +1,309 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Filename:      bignumlib.tex
+% Author:        Junwei Wang(wakemecn@gmail.com)
+% Last Modified: 2014-06-22 13:42
+% Description:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Big number library}
+A big integer will be represented using an array of digits in base $B$ with the
+following structures,
+\lstinputlisting[language=C,firstline=0]
+{./src/bignum.c}
+where \texttt{sign} is the sign bit, and \texttt{size} is the size of the
+dynamic array \texttt{tab}, and \texttt{block} is a self-defined data type
+\footnote{For example, \texttt{typedef int64\_t block;}}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{\texttt{bignum str2bignum(char *str)}}
+This function converts a string containing decimal digits and into a bignum.
+Algorithm \ref{str2bignum} is the main algorithm, and 
+\begin{algorithm} 
+\caption{\texttt{str2bignum}}
+\label{str2bignum}
+  \begin{algorithmic}[1]
+    \Require string $str = (s_{k-1}...s_0)$, where $s_{k-1}, ..., s_0$ is
+    decimal numbers.
+    \Ensure bignum $bn$.
+
+    \State $bn = 0$;
+    \State $bn = add(bn, str[0]-'0')$
+    \For {$i$ from $1$ to $\texttt{strlen(str)}-1$} 
+      \State $bn \gets mult(bn, 10)$
+      \State $bn \gets add(bn, str[i]-'0')$
+    \EndFor
+    \State \Return $bn$
+  \end{algorithmic}
+\end{algorithm}
+it takes \texttt{strlen(str)} of \texttt{add} and
+$\texttt{strlen(str)}-1$ of \texttt{mult}. The complexity of \texttt{add} and
+\texttt{mult} will be analyzed in the following sections.
+
+My implementation considers in the case where \texttt{str} starts with the
+negative symbol "-",
+\lstinputlisting[language=C,firstline=0]
+{./src/sr2bignum.c}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{\texttt{bignum add(bignum a, bignum b)}}
+This function adds the integers \texttt{a} and \texttt{b}.
+Algorithm \ref{add} is the main algorithm for $a, b \geq 0$ and $\texttt{b.size} \leq
+\texttt{a.size}$, otherwise we can swap $a$ and $b$. So the complexity of this
+whole algorithm should be $\mathcal{O}(\texttt{a.size}+\texttt{b.size})$.
+Note that in each loop iteration, the value of $tmp$ lies between 0 and $2B-1$,
+and the value of carry is 0 or 1.
+\begin{algorithm} 
+\caption{\texttt{add}}
+\label{add}
+  \begin{algorithmic}[1]
+    \Require $a = (a_{k-1}...a_0)_B$, $b = (b_{l-1}...b_0)_B$, where $k \geq l \geq
+    1$
+    \Ensure $c = (c_k...c_0)_B$, where $c = a + b$.
+
+    \State $carry = 0$;
+    \For {$i$ from $0$ to $l-1$} 
+      \State $tmp \gets a_i + b_i + carry$
+      \State $tmp \gets carry / B$
+      \State $c_i \gets carry$ \texttt{mod} $B$
+    \EndFor
+    \For {$i$ from $l$ to $k-1$} 
+      \State $tmp \gets a_i + carry$
+      \State $tmp \gets carry / B$
+      \State $c_i \gets carry$ \texttt{mod} $B$
+    \EndFor
+    \State $c_k \gets carry$
+    \State \Return $c$
+  \end{algorithmic}
+\end{algorithm}
+
+
+My implementation consider all the possible situations,
+\lstinputlisting[language=C,firstline=0]
+{./src/add.c}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{\texttt{bignum sub(bignum a, bignum b)}}
+This function returns \texttt{a-b}.
+The following is the main algorithm for $a, b \geq 0$  and $a.size \geq b.size$.
+The complexity of this algorithm is the same with Algorithm \ref{add}.
+Note that in each loop iteration, the value of $tmp$ lies between $-B$ and $B-1$,
+and the value of carry is 0 or -1.
+\begin{algorithm} 
+\caption{\texttt{sub}}
+  \begin{algorithmic}[1]
+    \Require $a = (a_{k-1}...a_0)_B$, $b = (b_{l-1}...b_0)_B$, where $k \geq l \geq
+    1$
+    \Ensure $c = (c_k...c_0)_B$, where $c = a - b$.
+
+    \State $carry = 0$;
+    \For {$i$ from $0$ to $l-1$} 
+      \State $tmp \gets a_i - b_i + carry$
+      \State $tmp \gets carry / B$
+      \State $c_i \gets carry$ \texttt{mod} $B$
+    \EndFor
+    \For {$i$ from $l$ to $k-1$} 
+      \State $tmp \gets a_i + carry$
+      \State $tmp \gets carry / B$
+      \State $c_i \gets carry$ \texttt{mod} $B$
+    \EndFor
+    \State $c_k \gets carry$
+    \State \Return $c$
+  \end{algorithmic}
+\end{algorithm}
+
+My implementation consider all the possible situations,
+\lstinputlisting[language=C,firstline=0]
+{./src/sub.c}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{\texttt{bignum mult(bignum a, bignum b)}}
+This function returns the product of \texttt{a} and \texttt{b}.
+Algorithm \ref{mult} is the main algorithm, and it takes the same method as what
+we studied in primary school for multiplication of decimal numbers. 
+The complexity of this algorithm should be $\mathcal{O}(\texttt{a.size} \cdot
+\texttt{b.size})$.
+Note that in each loop iteration, the value of $tmp$ lies between $0$ and $B^2-1$,
+and the value of carry lies between 0 or $B-1$.
+\begin{algorithm} 
+\caption{\texttt{mult}}
+\label{mult}
+  \begin{algorithmic}[1]
+    \Require $a = (a_{k-1}...a_0)_B$, $b = (b_{l-1}...b_0)_B$, where $k, l \geq
+    1$
+    \Ensure $c = (c_{k+l-1}...c_0)_B$, where $c = a * b$.
+
+    \State $carry = 0$;
+    \For {$i$ from $0$ to $k+l-1$} 
+      \State $c_i \gets 0$
+    \EndFor
+    \For {$i$ from $0$ to $k-1$} 
+      \State $carry \gets 0$
+      \For {$j$ from $0$ to $l-1$} 
+        \State $tmp \gets a_i*b_i + c_{i+j} + carry$
+        \State $tmp \gets carry / B$
+        \State $c_{i+j} \gets carry$ \texttt{mod} $B$
+      \EndFor
+      \State $c_{i+l} \gets carry$
+    \EndFor
+    \State \Return $c$
+  \end{algorithmic}
+\end{algorithm}
+
+My implementation consider all the possible cases,
+\lstinputlisting[language=C,firstline=0]
+{./src/mult.c}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{\texttt{bignum reminder(bignum a, bignum b)}}
+According \textbf{Theorem 3.1} and \textbf{Theorem 3.2} in \cite{ntb2}, we can
+have an efficient division with reminder algorithm if the divisor is normalized
+\footnote{That is, $b \geq B/2$.}. To understand the algorithm below, it is
+better to refer \cite{ntb2}.
+\begin{algorithm} 
+\caption{\texttt{normalized\_divi}}
+  \begin{algorithmic}[1]
+    \Require $a = (a_{k-1}...a_0)_B$, $b = (b_{l-1}...b_0)_B$, where $k \geq l \geq
+    1$
+    \Ensure $r = (r_{l-1}...c_0)_B$ and $q = (q_{k-l}...q_0)_B$, where $r = a
+    $ \texttt{mod} $b$ and $q = a / b$.
+
+    \For {$i$ from $0$ to $k-1$} 
+      \State $r_i = a_i$;
+    \EndFor
+    \State $r_k = 0$;
+    \For {$i$ from $k-l$ to $0$} 
+      \State $q_i \gets (r_{i+l}B+r_{i+l-1})/b_{l-1}$
+      \If {$q_i \geq B$}
+        \State $q_i \gets B-1$
+      \EndIf
+
+      \For {$j$ from $0$ to $+l-1$} 
+        \State $tmp \gets r_{i+j} - q_ib_j + carry$
+        \State $tmp \gets carry / B$
+        \State $r_{i+j} \gets carry$ \texttt{mod} $B$
+      \EndFor
+      \State $r_{i+l} \gets r_{i+l} + carry$
+
+      \While {$r_{i+l} < 0$}
+        \State $carry \gets 0$
+        \For {$j$ from $0$ to $+l-1$} 
+          \State $tmp \gets r_{i+j} + b_j + carry$
+          \State $tmp \gets carry / B$
+          \State $r_{i+j} \gets carry$ \texttt{mod} $B$
+	\EndFor
+        \State $r_{i+l} \gets r_{i+l} + carry$
+	\State $q_i \gets q_i -1$
+      \EndWhile
+      \State \Return $q, r$
+    \EndFor
+  \end{algorithmic}
+\end{algorithm}\\
+For the general case that the divisor is not normalized, we should left shift
+$a$ and $b$ the same bits to make $b$ is normalized; finally, to get the
+reminder, we should right shift the same bits of the reminder of the normalized division.
+The complexity of this algorithm is analyzed as
+$\mathcal{O}(\texttt{q.size}\cdot \texttt{b.size})$.
+
+The following is my implementation of the normalized division,
+\lstinputlisting[language=C,firstline=0]
+{./src/ndivi.c}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{\texttt{bignum addmod(bignum a, bignum b, bignum n)}}
+This function returns $a + b\ \texttt{mod}\ n$.
+\lstinputlisting[language=C,firstline=0]
+{./src/addmod.c}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{\texttt{bignum multmod(bignum a, bignum b, bignum n)}}
+This function returns $a \cdot b\ \texttt{mod}\ n$.
+\lstinputlisting[language=C,firstline=0]
+{./src/multmod.c}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{\texttt{bignum expmod(bignum a, bignum b, bignum n)}}
+This function returns $a^b\ \texttt{mod}\ n$.
+We use square and multiply algorithm to compute modular exponentiation.
+\begin{algorithm} 
+\caption{\texttt{expmod}}
+  \begin{algorithmic}[1]
+    \Require $n, a, b = (b_{l-1}...b_0)_2$
+    \Ensure $c = a^b \ \texttt{mod} \ n$
+
+    \State $c \gets 1$
+    \For {$i$ from $l-2$ downto $0$} 
+      \State $c = c^2\ \texttt{mod} \ n$;
+      \If {$b_i = 1$}
+        \State $c \gets c \cdot a\ \texttt{mod}\ n$
+      \EndIf
+    \EndFor
+    \State \Return $c$.
+  \end{algorithmic}
+\end{algorithm}\\
+We need $l-1$ squares and at most $l-1$ multiplications, so the complexity is
+$\mathcal{O}(\texttt{a.size} \cdot \texttt{b.size} \cdot length(b))$, where
+$length(b)$ is the number of bits of $b$.
+\lstinputlisting[language=C,firstline=0]
+{./src/expmod.c}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{\texttt{int millerrabin(bignum n, int t)}}
+This function performs the Miller-Rabin test on integer $n$ with security
+parameter $t$. The Miller-Rabin test is based on the following fact,
+\begin{itemize}
+ \item[] Let $n > 2$ be a prime, let $n-1=2^s\cdot r$ where $r$ is odd. Let
+   $a$ be an integer such that $\texttt{gcd}(a, n) = 1$. Then either $a^r
+   \equiv 1\ \texttt{mod} \ n$ or $a^{2^j\cdot r} -1 \equiv \ \texttt{mod}\ n$,
+   for some $j$, $0 \leq j < s$.
+\end{itemize}
+The complexity of the algorithm is $\mathcal{O}(length^3(n))$
+\begin{algorithm} 
+\caption{\texttt{millerrabin}}
+  \begin{algorithmic}[1]
+    \Require $n, t$
+    \Ensure "\texttt{prime}" or "\texttt{composite}", indicating $n$ is
+    considered as a prime or composite number.
+
+    \State Compute odd number $r$, such that $n-1 = 2^s \cdot r$
+    \For {$i$ from $1$ to $t$} 
+      \State Generate a random $a \in [2, n-2]$
+      \State $\beta \gets a^r \ \texttt{mod} \ n$
+      \If {$b \neq \pm 1$}
+        \State $j \gets 1$
+        \While {$j \leq s-1$ and $\beta \neq -1$}
+          \State $\beta \gets \beta^2 \ \texttt{mod}\ n$
+          \If {$\beta = 1$}
+            \State \Return "\texttt{composite}"
+          \EndIf
+          \State $j \gets j+1$
+        \EndWhile
+        \If {$\beta \neq -1$}
+          \State \Return "\texttt{composite}"
+        \EndIf
+      \EndIf
+    \EndFor
+    \State \Return "\texttt{prime}"
+  \end{algorithmic}
+\end{algorithm}\\
+
+
+\lstinputlisting[language=C,firstline=0]
+{./src/mr.c}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{\texttt{bignum genrandom(int length)}}
+This function generates a random bignum of \texttt{length} bits. My
+implementation randoms chooses every \texttt{block} of the bignum and set the
+$length$-th bit is the most significant bit.
+\lstinputlisting[language=C,firstline=0]
+{./src/genrandom.c}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{\texttt{bignum genrandomprime(int length)}}
+To generate a prime integer of $l$-bit, we can generate a random $l$-bit
+integer $n$, if $n$ passes Miller-Rabin test, the outputs $n$, or generate
+another $n$ again. Because there are about $log(l)$ prime numbers of length
+$l$, that is the complexity of this algorithm is
+$\mathcal{O}((log^3(l))\cdot\mathcal{O}(log(l)) = \mathcal{O}(log^4(l))$.
+\lstinputlisting[language=C,firstline=0]
+{./src/genrandomprime.c}

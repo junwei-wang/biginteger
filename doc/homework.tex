@@ -1,0 +1,58 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Filename:      homework.tex
+% Author:        Junwei Wang(wakemecn@gmail.com)
+% Last Modified: 2014-06-22 13:13
+% Description:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass{article}
+%\usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{algorithm}
+\usepackage{algpseudocode} 
+\usepackage{algorithmicx}
+\usepackage{scrextend}
+\usepackage{caption}
+
+\title{\textbf{\Large Homework: big number library and implementation of RSA}}
+
+\author{Junwei Wang\\
+\small University of Luxembourg\\
+\small \texttt{junwei.wang.001@student.uni.lu} \\
+}
+
+% theorem
+\newtheorem{defn}{Definition}
+\newtheorem{theorem}[defn]{Theorem}
+\newtheorem{lemma}[defn]{Lemma}
+
+% listings
+\lstset{basicstyle=\ttfamily}
+
+\begin{document}
+\maketitle
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+
+\input{introduction}
+\input{bignumlib}
+\input{rsa}
+
+\section{Test}
+\subsection{How to run?}
+\texttt{\$ make} 
+\\\texttt{\$ make run}
+\subsection{Bechmark}
+About $4\thicksim5$ seconds are consumed for per test case on Acer V5-471 laptop
+with Linux 3.2.0-64-generic x86\_64, Intel(R) Core(TM) i5-3337U CPU @ 1.80GHz)
+and 4GB memory.
+
+
+\bibliographystyle{plain}
+\bibliography{ref}
+
+%\input{appendix}
+
+\end{document}

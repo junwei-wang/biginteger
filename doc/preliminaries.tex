@@ -1,0 +1,155 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Filename:      preliminaries.tex
+% Author:        Junwei Wang(wakemecn@gmail.com)
+% Last Modified: 2013-12-30 21:17
+% Description:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Preliminaries}
+
+\subsection{Elliptic Curves}
+The range of hash function we talk about in this report is the set of points on
+specified elliptic
+curve, and the following gives the definition of the type of elliptic curves we
+adopt in this report.
+\begin{defn}[\textbf{Elliptic Curve} \cite{koblitz1987elliptic}]
+An elliptic curve $E(\mathbb{F})$ defined over a field $\mathbb{F}$ of characteristic $\neq 2, 3$ 
+is the set of solutions $(x, y) \in \mathbb{F}^2$ to the equation:
+\begin{equation}
+y^2=x^3+ax+b, \ \ \ a, b \in \mathbb{F}
+\end{equation}
+where the cubic on the right have no multiple roots.
+\end{defn}
+
+As it is illustrated in \cite{koblitz1987elliptic}, the points on $E(\mathbb{F})$
+together with ``point at infinity" $\mathcal{O}$ can define a group structure,
+where $\mathcal{O}$ is the identity element.
+Let $P = (x_1, y_1), Q = (x_2, y_2) \in E_\mathbb{F}$, the other group law follows:
+\begin{enumerate}
+\item $P \neq \mathcal{O}$, then $-P = (x_1, -y_1)$ is denoted
+as the \emph{negative} of $P$;
+\item $P, Q \neq \mathcal{O}$, then $P+Q=(x_3, y_3)$ with,
+\begin{equation}
+\label{groupPlus}
+\begin{array}{lll}
+x_3 & = & \lambda^2-x_1-x_2, \\
+y_3 & = & \lambda(x_1-x_3) - y_1, \\
+\lambda & = &
+\left\{
+\begin{array}{ll}
+\frac{y_2-y_1}{x_2-x_1} & \mbox{if\ } P \pm Q,\\
+\frac{3x_1^2+a}{2y_1}   & \mbox{if\ } P = Q.
+\end{array}
+\right.
+\end{array}
+\end{equation}
+\end{enumerate}
+\par In our implementation, we use a $nG$ to represent ``point at
+infinity" $\mathcal{O}$, where $n$ is the total number of points in this group
+and $G$ is the generator of the group, since that we cannot represent it in the tradition
+two-dimensions coordinates.
+
+\subsection{Quadratic Residue and Legendre Symbol}
+We recall the definition of quadratic residue and Legendre Symbol in the
+elementary number theory to help to understand the simplified-SWU
+algorithm.
+\begin{defn}[Quadratic Residue \cite{shoup2009computational}]
+Let $p$ be a prime number, an integer $a$ is called a 
+\textbf{quadratic residues} modulo $p$, or a square modulo $p$, if 
+$a = b^2\ \texttt{mod}\ p$ for some integer $b \in \mathbb{Z}_p^*$, and $b$
+is called a \textbf{square root} of a modulo $p$.
+\end{defn}
+\begin{defn}[Legendre Symbol \cite{shoup2009computational}]
+For an odd prime $p$ and an integer $a$:
+\begin{equation}
+\left(\frac{a}{p}\right) = \left\{
+\begin{array}{rl}
+1 & \mathrm{if\ } gcd(a, p) \neq 0 \mathrm{\ and\ } a
+\mathrm{\ is\ a\ square\ modulo\ } p,\\
+0 & \mathrm{if\ } gcd(a, p) = p,\\
+-1 & \mathrm{otherwise}.
+\end{array}
+\right.
+\end{equation}
+\end{defn}
+
+\begin{theorem}[\cite{shoup2009computational}]
+\label{square}
+Let $p$ is a prime, and let $a\in \mathbb{Z}$,
+\begin{equation}
+\left(\frac{a}{p}\right) = a^{\frac{p-1}{2}} \mathtt{\ mod\ } p.
+\end{equation}
+\end{theorem}
+
+\subsection{Simple Shallue-Woestijne-Ulas Algorithm}
+Shallue and Woestijne provided the first deterministic method in \cite{SW06}, and
+the method was optimized for hyper\-elliptic curves in \cite{Ulas07}, which is
+called SWU algorithm. Recently, SWU algorithm was simplified in
+\cite{brier2010efficient}. We recall the simplified SWU algorithm in the
+following lemma.
+
+\begin{lemma}[Simplified Ulas Maps (Simplified-SWU) \cite{brier2010efficient}]
+\label{swu}
+Let $\mathbb{F}_q$ be a field and let $g(x) = x^3 + ax + b$,
+where $a, b \neq 0$.  Let:
+\begin{equation}
+\begin{array}{lll}
+X_2(t) & = & \frac{-b}{a}\left(1+\frac{1}{t^4-t^2}\right),\\
+X_3(t) & = & -t^2X_2(t),\\
+U(t) &= & t^3g(X_2(t)),
+\end{array}
+\end{equation}
+then 
+\begin{equation}
+\label{u}
+U(t)^2 = -g(X_2(t))\cdot g(X_3(t)).
+\end{equation}
+\end{lemma}
+This lemma was proved correct in the original paper.  
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+
+The simple SWU algorithm is composed by two part: computing the candidate
+points (line 1 to 5) and selecting the correct one (line 6 to 10).
+\begin{algorithm} 
+\caption{Simplified SWU algorithm \cite{brier2010efficient}}
+\label{sswu}
+  \begin{algorithmic}[1]
+    \Require $\mathbb{F}_q$ such that $q \equiv 3\ (\texttt{mod}\ 4)$, parameters
+$a$, $b$ and input $t \in \mathbb{F}_q$
+    \Ensure $(x, y) \in E_{a,b}(\mathbb{F}_q)$ where $E_{a,b}: y^2 = x^3 + ax +
+b$
+
+    \State $\alpha \gets -t^2$
+    \State $X_2 \gets \frac{-b}{a}(1+\frac{1}{\alpha^2+\alpha})$
+    \State $X_3 \gets \alpha \cdot X_2$
+    \State $h_2 \gets (X_2)^3 + a\cdot X_2 + b$
+    \State $h_3 \gets (X_3)^3 + a\cdot X_3 + b$
+    \If{$h_2$ is a square}
+      \State \Return $(X_2, h_2^{(q+1)/4})$
+    \Else
+      \State \Return $(X_3, h_3^{(q+1)/4})$
+    \EndIf
+  \end{algorithmic}
+\end{algorithm}
+\\This algorithm defines a function $f'_{a,b}: \mathbb{F}_{q} \rightarrow
+E(\mathbb{F}_q)$, which has been proved to be a weak-encoding into curves, and can
+be used in the general construction of hashing into elliptic curves \cite{brier2010efficient}.
+
+\subsection{Simple Password Exponential Key Exchange}
+Simple password exponential key exchange was firstly described in
+\cite{Jablon:1996:SPA:242896.242897}, which uses Diffie-Hellman key exchange
+\cite{DH76} to establish a shared key between Alice and Bob.
+\par Suppose Alice and Bob share a secret password $pw$ in previous,
+let $H$ is a hash function maps arbitrary string into elliptic curve. To
+establish a session-key, Alice and Bob do the followings:
+\begin{enumerate}
+\item Alice computes and sends $A = a.H(pw)$ to Bob, where $a \leftarrow
+\mathbb{Z}_q$,
+\item Bob computes and sends $B = b.H(pw)$ to Alice, where $b \leftarrow
+\mathbb{Z}_q$,
+\item Alice computes $K = a\cdot B = ab \cdot H(pw)$,
+\item Bob computes $K = b\cdot A = ab \cdot H(pw)$.
+\end{enumerate}
+We implement this scheme to give
+an example of the usage of simplified-SWU algorithms and operations on the
+elliptic curves.

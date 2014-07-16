@@ -1,0 +1,32 @@
+\section{The RSA algorithm}
+The RSA algorithm is the most widely-used public-key encryption algorithm.
+It is invented in 1977 by Rivest, Shamir and Adleman.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{\texttt{void keygen(bignum *n, bignum *e, bignum *d, int length)}}
+This algorithm does following steps:
+\begin{enumerate}
+  \item generate two large primes $p$ and $q$ with same length, and $p \neq q$
+  \item compute $n = p*q$ and $\phi = (p-1)(q-1)$ 
+  \item select a random integer $e$, $1 < e < \phi$ such that $\texttt{gcd}(e,
+    \phi) = 1$
+  \item compute a $d$ such that $e \dot d \equiv 1\ \texttt{mod}\ \phi$ using
+    the extended Euclidean algorithm
+\end{enumerate}
+The public key $(n, e)$. The private key is $d$.
+\lstinputlisting[language=C,firstline=0]
+{./src/keygen.c}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{\texttt{void RSAencrypt(bignum m, bignum e, bignum n)}}
+Given a message $m < N$, then ciphertext is computed as
+$$c = m^e\ \texttt{mod}\ n$$ with public key $(n, e)$.
+\lstinputlisting[language=C,firstline=0]
+{./src/enc.c}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{\texttt{void RSAdecrypt(bignum c, bignum d, bignum n)}}
+Given a ciphertext $e$, to recover $m$, compute
+$$m = c^d \ \texttt{mod}\ n$$ with private key $d$.
+\lstinputlisting[language=C,firstline=0]
+{./src/dec.c}

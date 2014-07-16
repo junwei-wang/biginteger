@@ -1,0 +1,38 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Filename:      appendix.tex
+% Author:        Junwei Wang(wakemecn@gmail.com)
+% Last Modified: 2013-12-04 17:54
+% Description:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\appendix
+\section{Implementation of Group Operations of Groups based on Elliptic Curves}
+\label{appA}
+In the following we provide an implementation of operations on elliptic curves
+with parameters provided in \footref{tp5},
+using the Sagemath library \cite{sage5.12}.
+%{/home/junwei/github/Simple-SWU/src/elliptic_curve.sage}
+\lstinputlisting[language=Python,firstline=0]
+{./src/elliptic_curve.sage}
+
+\section{Implementation of the Simlified SWU Algorithm}
+\label{appB}
+In the following we provide an implementation of simplified SWU algorithm from
+\cite{brier2010efficient} with parameters provided in 
+\footnote{\label{tp5}Jean-S\'ebstien CORON,
+\emph{TP 5: Implementation of SWU's algorithm},
+\url{http://www.jscoron.fr/cours/mics3crypto/tpswu.pdf}.},
+using the Sagemath library \cite{sage5.12}.
+\lstinputlisting[language=Python,firstline=0]
+%{/home/junwei/github/Simple-SWU/src/simple_swu.sage}
+{./src/simple_swu.sage}
+
+\section{Implementation of Simple Password Exponential Key Exchange}
+\label{appC}
+In the following we provide an implementation of Simple Password Exponential Key
+Exchange
+with parameters provided in \footref{tp5},
+using the Sagemath library \cite{sage5.12}.
+\lstinputlisting[language=Python,firstline=0]
+%{/home/junwei/github/Simple-SWU/src/SPEKE.sage}
+{./src/SPEKE.sage}
+

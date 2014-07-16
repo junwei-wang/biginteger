@@ -1,0 +1,121 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Filename:      implementation.tex
+% Author:        Junwei Wang(wakemecn@gmail.com)
+% Last Modified: 2013-12-30 21:50
+% Description:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Our Implementation}
+In this section, we describe our implementation of group structure on elliptic
+curves, simplified SWU algorithm and Simple Password Exponential Key Exchange
+in detail.
+\subsection{Group Operations on Elliptic Curve}
+Let $E: y^2 = x^3  - 3x + b\ \texttt{mod}\ p$ is an elliptic curve, where $q$ is
+the group order based on $E$, point $G = (G_x, G_y)$ is the generator of the
+group. Then we define the identity of the group, i.e., the ``point at
+infinity" $\mathcal{O}$ equal to $qP$. Because we cannot represent
+$\mathcal{O}$ in tradition two-dimension coordinates, this definition is of 
+great convenience to computation on the group. According to the definition of the group on
+elliptic curves,
+the inverse of any point $P$ is the point $P'$, that has same x-coordinate 
+with $P'$, except that the inverse of ``point at infinity" $\mathcal{O}$ is 
+itself. 
+\par The implementation of addition operation in the group follows the
+Equation~\ref{groupPlus} directly. The multiplication operation is implemented in the 
+\emph{double-and-add} methods, which is as efficient as
+\emph{square-and-multiple} on multiplicative groups.
+\begin{algorithm} 
+\caption{Double-and-Add Algorithm}
+  \begin{algorithmic}[1]
+    \Require Point $P$ on elliptic curve $E$, positive integer $m =
+(m_km_{k-1}...m_0)_2$ where $m_k = 1$
+    \Ensure Point $Q$ on $E$
+
+    \For {$i$ from $k-1$ downto $0$} 
+      \State $Q \gets 2P$
+      \If {$m_i = 1$}
+         \State $Q \gets Q + P$
+      \EndIf
+    \EndFor
+    \State \Return $Q$
+  \end{algorithmic}
+\end{algorithm}
+For more detail, please refer to Appendix~\ref{appA}.
+
+
+\subsection{Simplified Shallue-Woestijne-Ulas Algorithm}
+The implementation of simplified SWU Algorithm was first published in 
+\cite{brier2010efficient}, which is exactly the same as described in
+Algorithm~\ref{sswu}. We discover that there exists some repeated computation is the
+second part (i.e., selection part) of the implementation, that is
+$\texttt{is\_square}(h_2)$ (i.e., $h_2 ^ {(p-1)/2}$ as Theorem~\ref{square})
+and $h_2 ^ {(p+1)/4}$ are both powers of $h_2$.
+For any $p = 3\ \texttt{mod}\ 4$, we observe that $(p-3)/4$ is an integer
+and
+\begin{equation}
+\label{h2}
+\begin{array}{lll}
+h_2^{(p-1)/2} & = & (h_2^{(p-3)/4})^2 * h_2, \\
+h_2^{(p+1)/4} & = & h_2^{(p-3)/4} * h_2.
+\end{array}
+\end{equation}
+Hence, in the implementation, we compute $h_2^{(p-3)/4}$ firstly, and then
+compute $h_2^{(p-1)/2}$ and $h_2^{(p+1)/4}$ according to Equation~\ref{h2}. 
+By this approach, we save nearly half of the computation time when $h_2$ is a
+square, in other words, when $(x_2, h_2^{(p+1)/4})$ is a point on specified elliptic curve.
+
+\par When $h_2$ is not a square, that is, $h_3$ is a square, according to
+Equation~\ref{u}, we observe that
+$(t^3g(X_2(t)))^2 = -g(X_2(t)) \cdot g(X_3(t))$,
+in other words,
+$(t^3 \cdot h_2)^2 = -h_2 \cdot h_3$. 
+Therefore,
+\begin{equation}
+h_3  =  -t^6h_2,
+\end{equation}
+and
+\begin{equation}
+\label{h3}
+\begin{array}{lll}
+h_3^{(p-3)/4} & = & (-1)^{(p-3)/4} \cdot (t^6)^{(p-3)/4} \cdot h_2^{(p-3)/4}\\
+& = & (-1)^{(p-3)/4} \cdot (t^3)^{(p-1)/2} \cdot t^{-3} \cdot h_2^{(p-3)/4},\\
+h_3^{(p+1)/4} & = & (-1)^{(p-3)/4} \cdot (t^3)^{(p-1)/2} \cdot t^{-3} \cdot
+h_2^{(p-3)/4} \cdot h_3.
+\end{array}
+\end{equation}
+Since $|(-1)^{(p-3)/4} \cdot (t^3)^{(p-1)/2}|=1$, both 
+$t^{-3} \cdot h_2^{(p-3/4)} \cdot h_3$ and
+$-t^{-3} \cdot h_2^{(p-3/4)} \cdot h_3$ are the roots of $h_3$. 
+By this approach, we save nearly half of the computation time when $h_3$ is  a
+square, in other words, when $(x_3, h_3^{(p+1)/4})$ is a point on specified elliptic curve.
+
+\par Our efficient algorithm is showed below.
+\begin{algorithm} 
+\caption{Efficient simplified SWU algorithm \cite{brier2010efficient}}
+\label{sswu}
+  \begin{algorithmic}[1]
+    \Require $\mathbb{F}_q$ such that $q \equiv 3\ (\texttt{mod}\ 4)$, parameters
+$a$, $b$ and input $t \in \mathbb{F}_q$
+    \Ensure $(x, y) \in E_{a,b}(\mathbb{F}_q)$ where $E_{a,b}: y^2 = x^3 + ax +
+b$
+
+    \State $\alpha \gets -t^2$
+    \State $X_2 \gets \frac{-b}{a}(1+\frac{1}{\alpha^2+\alpha})$
+    \State $X_3 \gets \alpha \cdot X_2$
+    \State $h_2 \gets (X_2)^3 + a\cdot X_2 + b$
+    \State $h_3 \gets (X_3)^3 + a\cdot X_3 + b$
+    \State $t_2 \gets h_2^{(p-3)/4}$
+    \State $t_3 \gets t^{-3}$
+    \If{$h_2$ is a square}
+      \State \Return $(X_2, t_2 \cdot h_2)$
+    \Else
+      \State \Return $(X_3, t_2 \cdot t_3 \cdot h_3)$
+    \EndIf
+  \end{algorithmic}
+\end{algorithm}
+For more detail, please refer to Appendix~\ref{appB}.
+
+\subsection{Simple Password Exponential Key Exchange}
+In the implementation of SPEKE, we use $\mathrm{SHA256(\cdot)}\
+\texttt{mod}\ q$ \cite{fips2002180} as the hash function into $\mathbb{F}_q$,
+where $q$ is 192 length. The reminder of the implementation is 
+trivial.  For more detail, please refer to Appendix~\ref{appC}.
