@@ -1,7 +1,7 @@
 /*
  * Filename:      bignum.c
  * Author:        Junwei Wang(wakemecn@gmail.com)
- * Last Modified: 2014-06-22 13:48
+ * Last Modified: 2015-01-01 19:46
  * Description:
  *
  */
@@ -514,7 +514,7 @@ bignum expmod(bignum a, bignum b, bignum n)
         r = multmod(r, r, n);
         free(t);
 
-        if ((b.tab[b.size-1] >> j) & 0x1 == 1) {
+        if (((b.tab[b.size-1] >> j) & 0x1) == 1) {
             t = r.tab;
             r = multmod(r, a, n);
             free(t);
@@ -527,7 +527,7 @@ bignum expmod(bignum a, bignum b, bignum n)
             r = multmod(r, r, n);
             free(t);
 
-            if ((b.tab[i] >> j) & 0x1 == 1) {
+            if (((b.tab[i] >> j) & 0x1) == 1) {
                 t = r.tab;
                 r = multmod(r, a, n);
                 free(t);
